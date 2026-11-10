@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nokia PM Tool - Administration des Licences</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client (Bibliothèque officielle CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #124191;
+      --primary-light: #e8eefa;
+      --primary-dark: #092659;
+      --accent: #00b4d8;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --warning: #f59e0b;
+      --warning-light: #fef3c7;
+      --danger: #ef4444;
+      --danger-light: #fee2e2;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; font-size: 1.2rem; color: var(--primary); }
+    .brand-badge { background: var(--primary-light); color: var(--primary); font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 999px; }
+
+    nav { display: flex; gap: 0.5rem; }
+    .nav-btn {
+      background: transparent;
+      border: none;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+      font-size: 0.875rem;
+    }
+    .nav-btn:hover { background: var(--bg); color: var(--text); }
+    .nav-btn.active { background: var(--primary-light); color: var(--primary); }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .user-pill {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text);
+    }
+    .user-pill strong { color: var(--primary); }
+
+    /* Layout */
+    main { max-width: 1400px; width: 100%; margin: 2rem auto; padding: 0 1.5rem; flex: 1; }
+
+    /* Login Screen Container */
+    #auth-view {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      padding: 1.5rem;
+    }
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+      width: 100%;
+      max-width: 440px;
+      padding: 2.25rem;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+    .auth-title { font-size: 1.35rem; font-weight: 700; color: var(--primary); margin-top: 0.5rem; }
+    .auth-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .stat-title { font-size: 0.875rem; color: var(--text-muted); font-weight: 500; }
+    .stat-value { font-size: 2.25rem; font-weight: 700; margin-top: 0.5rem; color: var(--text); }
+    .stat-sub { font-size: 0.8rem; color: var(--success); margin-top: 0.25rem; }
+
+    /* Cards & Tables */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafbfc;
+    }
+    .card-title { font-size: 1.1rem; font-weight: 600; }
+    .card-body { padding: 1.5rem; }
+
+    .btn {
+      padding: 0.55rem 1.1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.875rem;
+      transition: all 0.15s ease;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline { background: white; border-color: var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-danger { background: var(--danger-light); color: var(--danger); border-color: #fca5a5; }
+    .btn-danger:hover { background: var(--danger); color: white; }
+    .btn-warning { background: var(--warning-light); color: #b45309; border-color: #fde68a; }
+    .btn-warning:hover { background: var(--warning); color: white; }
+    .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.775rem; }
+    .btn-block { width: 100%; justify-content: center; }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 0.85rem 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); background: #fafbfc; border-bottom: 1px solid var(--border); }
+    td { padding: 0.9rem 1rem; font-size: 0.875rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafcff; }
+
+    .key-badge {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      background: #f1f5f9;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px dashed #cbd5e1;
+    }
+    .key-badge:hover { background: #e2e8f0; }
+
+    .pill {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .pill-active { background: var(--success-light); color: #065f46; }
+    .pill-suspended { background: var(--warning-light); color: #92400e; }
+    .pill-revoked { background: var(--danger-light); color: #991b1b; }
+    .pill-expired { background: #e2e8f0; color: #475569; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+    .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      background: white;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(18, 65, 145, 0.15);
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal {
+      background: white;
+      border-radius: var(--radius);
+      max-width: 550px;
+      width: 90%;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+      overflow: hidden;
+      animation: modalIn 0.2s ease;
+    }
+    @keyframes modalIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; background: #fafbfc; }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #1e293b;
+      color: white;
+      padding: 0.85rem 1.25rem;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      z-index: 200;
+      display: none;
+      font-size: 0.9rem;
+      animation: toastIn 0.2s ease;
+    }
+    @keyframes toastIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .alert {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .alert-danger { background: var(--danger-light); color: #991b1b; border: 1px solid #fca5a5; }
+    .alert-info { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================== -->
+  <!-- 1. VUE DE CONNEXION (SUPABASE AUTH : signInWithPassword) -->
+  <!-- ============================================================== -->
+  <div id="auth-view">
+    <div class="auth-card">
+      <div class="auth-header">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" color="#124191">
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <div class="auth-title">Nokia PM Tool</div>
+        <div class="auth-subtitle">Espace Administration Sécurisé (Supabase Auth)</div>
+      </div>
+
+      <div class="alert alert-danger" id="login-error"></div>
+
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="login-email">Adresse Email Administrateur</label>
+          <input type="email" id="login-email" placeholder="hasinarindrasoaelie@gmail.com" required value="hasinarindrasoaelie@gmail.com">
+        </div>
+
+        <div class="form-group">
+          <label for="login-password">Mot de passe</label>
+          <input type="password" id="login-password" placeholder="••••••••••••" required>
+        </div>
+
+        <!-- Paramètres de connexion Supabase (pliables / pré-enregistrés) -->
+        <details style="margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--text-muted);">
+          <summary style="cursor: pointer; font-weight: 600; color: var(--primary);">⚙️ Paramètres Supabase (URL & Clé Publique)</summary>
+          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-top: 0.5rem;">
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+              <label for="login-supabase-url">URL Supabase (SUPABASE_URL)</label>
+              <input type="text" id="login-supabase-url" placeholder="https://votre-projet.supabase.co" style="font-size: 0.8rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+              <label for="login-supabase-anon">Clé Publique Anon (SUPABASE_ANON_KEY)</label>
+              <input type="password" id="login-supabase-anon" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="font-size: 0.8rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="login-api-url">URL de l'Edge Function admin-api</label>
+              <input type="text" id="login-api-url" placeholder="https://votre-projet.supabase.co/functions/v1/admin-api ou /api" style="font-size: 0.8rem;">
+            </div>
+          </div>
+        </details>
+
+        <button type="submit" class="btn btn-primary btn-block" id="btn-login-submit">
+          Se connecter à l'administration
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 2. TABLEAU DE BORD ADMINISTRATEUR (AFFICHÉ APRÈS AUTH) -->
+  <!-- ============================================================== -->
+  <div id="dashboard-view" style="display: none; flex-direction: column; min-height: 100vh;">
+    <header>
+      <div class="brand">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Nokia PM Tool
+        <span class="brand-badge">Admin Supabase JWT</span>
+      </div>
+
+      <nav>
+        <button class="nav-btn active" onclick="switchTab('licenses')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>
+          Licences
+        </button>
+        <button class="nav-btn" onclick="switchTab('technicians')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Techniciens
+        </button>
+        <button class="nav-btn" onclick="switchTab('logs')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Journal d'Audit
+        </button>
+        <button class="nav-btn" onclick="switchTab('settings')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Paramètres
+        </button>
+      </nav>
+
+      <div class="header-user">
+        <div class="user-pill">
+          <span>👤</span>
+          <span id="user-display-email">admin@nokia.com</span>
+          <strong id="user-display-role">(super_admin)</strong>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="handleLogout()" title="Fermer la session">
+          Déconnexion
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Stats Row -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-title">Licences Actives</div>
+          <div class="stat-value" id="stat-active">-</div>
+          <div class="stat-sub">Validées et opérationnelles</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Total Licences Émises</div>
+          <div class="stat-value" id="stat-total">-</div>
+          <div class="stat-sub">Toutes périodes confondues</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Techniciens Enregistrés</div>
+          <div class="stat-value" id="stat-techs">-</div>
+          <div class="stat-sub">Opérateurs habilités</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Téléphones Liés (1:1)</div>
+          <div class="stat-value" id="stat-devices">-</div>
+          <div class="stat-sub">Sécurité matérielle active</div>
+        </div>
+      </div>
+
+      <!-- TAB 1: LICENSES -->
+      <div id="tab-licenses" class="tab-content active">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Gestion des Licences</div>
+            <button class="btn btn-primary" onclick="openCreateLicenseModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Créer une Licence
+            </button>
+          </div>
+          <div class="card-body" style="padding:0; overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Clé de Licence</th>
+                  <th>Technicien</th>
+                  <th>Durée</th>
+                  <th>Statut</th>
+                  <th>Téléphone Lié</th>
+                  <th>Expire le</th>
+                  <th>Dernière Sync</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="licenses-table-body">
+                <tr><td colspan="8" style="text-align:center; padding: 2rem;">Chargement des données...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: TECHNICIANS -->
+      <div id="tab-technicians" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Techniciens Habilités</div>
+            <button class="btn btn-primary" onclick="openCreateTechModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Ajouter un Technicien
+            </button>
+          </div>
+          <div class="card-body" style="padding:0; overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom Complet</th>
+                  <th>Société</th>
+                  <th>Email</th>
+                  <th>Téléphone</th>
+                  <th>Licences</th>
+                  <th>Date d'ajout</th>
+                </tr>
+              </thead>
+              <tbody id="technicians-table-body">
+                <tr><td colspan="6" style="text-align:center; padding: 2rem;">Chargement des techniciens...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: AUDIT LOGS -->
+      <div id="tab-logs" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Journal d'Audit et Sécurité (Avec Attribution Admin)</div>
+            <button class="btn btn-outline btn-sm" onclick="loadLogs()">Rafraîchir</button>
+          </div>
+          <div class="card-body" style="padding:0; overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Horodatage</th>
+                  <th>Action</th>
+                  <th>Licence / Technicien</th>
+                  <th>Détails & Auteur</th>
+                </tr>
+              </thead>
+              <tbody id="logs-table-body">
+                <tr><td colspan="4" style="text-align:center; padding: 2rem;">Chargement des logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: SETTINGS -->
+      <div id="tab-settings" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Paramètres de Connexion Supabase & API</div>
+          </div>
+          <div class="card-body">
+            <div class="form-grid" style="max-width: 700px;">
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="cfg-supabase-url">URL Supabase (SUPABASE_URL)</label>
+                <input type="text" id="cfg-supabase-url" placeholder="Ex: https://xyz.supabase.co">
+              </div>
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="cfg-supabase-anon">Clé Publique Anon Supabase (SUPABASE_ANON_KEY)</label>
+                <input type="password" id="cfg-supabase-anon" placeholder="Clé publique uniquement (jamais service_role)">
+              </div>
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="cfg-api-url">URL de l'Edge Function admin-api</label>
+                <input type="text" id="cfg-api-url" placeholder="Ex: https://xyz.supabase.co/functions/v1/admin-api">
+              </div>
+            </div>
+            <div style="margin-top: 1rem;">
+              <button class="btn btn-primary" onclick="saveSettings()">Enregistrer les paramètres</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: CREATE LICENSE -->
+  <div class="modal-backdrop" id="modal-license">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="font-size: 1.1rem; font-weight: 600;">Générer une Nouvelle Licence</h3>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('modal-license')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>Attribuer au Technicien</label>
+          <select id="lic-tech-select">
+            <option value="">-- Sans technicien attitré (libre) --</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>Durée de Validité</label>
+          <select id="lic-duration">
+            <option value="1_MONTH">1 Mois (30 jours)</option>
+            <option value="3_MONTHS">3 Mois (90 jours)</option>
+            <option value="6_MONTHS">6 Mois (180 jours)</option>
+            <option value="1_YEAR">1 An (365 jours)</option>
+            <option value="PERMANENT">Permanente / Illimitée</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>Clé Personnalisée (laisser vide pour auto-génération)</label>
+          <input type="text" id="lic-custom-key" placeholder="NOKIA-XXXX-XXXX-XXXX">
+        </div>
+        <div class="form-group">
+          <label>Notes / Référence Commande</label>
+          <input type="text" id="lic-notes" placeholder="Ex: Projet Déploiement 5G Zone Nord">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-license')">Annuler</button>
+        <button class="btn btn-primary" onclick="submitCreateLicense()">Générer la Licence</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE TECHNICIAN -->
+  <div class="modal-backdrop" id="modal-tech">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="font-size: 1.1rem; font-weight: 600;">Ajouter un Nouveau Technicien</h3>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('modal-tech')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>Nom Complet *</label>
+          <input type="text" id="tech-name" placeholder="Ex: Jean Dupont" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>Société / Sous-traitant</label>
+          <input type="text" id="tech-company" placeholder="Ex: Nokia Networks ou Prestataire SARL">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>Email Professionnel</label>
+          <input type="email" id="tech-email" placeholder="jean.dupont@partner.com">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>Numéro de Téléphone</label>
+          <input type="tel" id="tech-phone" placeholder="+33 6 12 34 56 78">
+        </div>
+        <div class="form-group">
+          <label>Notes internes</label>
+          <input type="text" id="tech-notes" placeholder="Matricule, zone géographique...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-tech')">Annuler</button>
+        <button class="btn btn-primary" onclick="submitCreateTech()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ============================================================== -->
+  <!-- 3. JAVASCRIPT : SUPABASE AUTH (signInWithPassword + JWT Bearer)-->
+  <!-- ============================================================== -->
+  <script>
+    // Variables de configuration (Persistance locale sécurisée dans le navigateur)
+    let SUPABASE_URL = localStorage.getItem("nokia_lic_supabase_url") || "";
+    let SUPABASE_ANON_KEY = localStorage.getItem("nokia_lic_supabase_anon") || "";
+    let API_URL = localStorage.getItem("nokia_lic_api_url") || "";
+
+    let supabaseClient = null;
+    let currentSession = null;
+    let techniciansList = [];
+    let licensesList = [];
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.innerText = msg;
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 3500);
+    }
+
+    function initSupabaseClient() {
+      if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true
+            }
+          });
+          return true;
+        } catch (e) {
+          console.error("Erreur init Supabase client", e);
+          return false;
+        }
+      }
+      return false;
+    }
+
+    // Gestion de l'affichage Connexion vs Dashboard
+    function showAuthView(errorMsg = null) {
+      document.getElementById("auth-view").style.display = "flex";
+      document.getElementById("dashboard-view").style.display = "none";
+      const errBox = document.getElementById("login-error");
+      if (errorMsg) {
+        errBox.innerText = errorMsg;
+        errBox.style.display = "block";
+      } else {
+        errBox.style.display = "none";
+      }
+    }
+
+    function showDashboardView(session) {
+      currentSession = session;
+      document.getElementById("auth-view").style.display = "none";
+      document.getElementById("dashboard-view").style.display = "flex";
+
+      const email = session.user?.email || "admin";
+      document.getElementById("user-display-email").innerText = email;
+
+      // Charger les données initiales
+      loadLicenses();
+    }
+
+    // Vérification de session au chargement
+    async function checkExistingSession() {
+      // Pré-remplir les champs de config
+      document.getElementById("login-supabase-url").value = SUPABASE_URL;
+      document.getElementById("login-supabase-anon").value = SUPABASE_ANON_KEY;
+      document.getElementById("login-api-url").value = API_URL;
+
+      if (!initSupabaseClient()) {
+        showAuthView("Veuillez renseigner votre URL Supabase et votre clé Anon dans les paramètres ci-dessous.");
+        return;
+      }
+
+      try {
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        if (error || !session) {
+          showAuthView();
+          return;
+        }
+
+        // Écouter les changements d'état d'authentification
+        supabaseClient.auth.onAuthStateChange((event, newSession) => {
+          if (event === "SIGNED_OUT" || !newSession) {
+            currentSession = null;
+            showAuthView("Vous avez été déconnecté.");
+          } else if (newSession) {
+            currentSession = newSession;
+          }
+        });
+
+        showDashboardView(session);
+      } catch (err) {
+        console.warn("Session check failed", err);
+        showAuthView();
+      }
+    }
+
+    // Connexion via signInWithPassword
+    async function handleLogin(event) {
+      event.preventDefault();
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+      const submitBtn = document.getElementById("btn-login-submit");
+      const errBox = document.getElementById("login-error");
+
+      // Sauvegarde des éventuels nouveaux paramètres Supabase saisis
+      const customUrl = document.getElementById("login-supabase-url").value.trim();
+      const customAnon = document.getElementById("login-supabase-anon").value.trim();
+      const customApi = document.getElementById("login-api-url").value.trim();
+
+      if (customUrl) { SUPABASE_URL = customUrl; localStorage.setItem("nokia_lic_supabase_url", SUPABASE_URL); }
+      if (customAnon) { SUPABASE_ANON_KEY = customAnon; localStorage.setItem("nokia_lic_supabase_anon", SUPABASE_ANON_KEY); }
+      if (customApi) { API_URL = customApi; localStorage.setItem("nokia_lic_api_url", API_URL); }
+
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        errBox.innerText = "SUPABASE_URL et la clé SUPABASE_ANON_KEY sont obligatoires.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      if (!supabaseClient) {
+        initSupabaseClient();
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Connexion en cours...";
+      errBox.style.display = "none";
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          throw new Error(error.message || "Identifiants invalides");
+        }
+
+        if (!data.session) {
+          throw new Error("Aucune session reçue");
+        }
+
+        showDashboardView(data.session);
+        showToast(`Bienvenue ${email} !`);
+      } catch (err) {
+        errBox.innerText = `Échec de connexion : ${err.message}`;
+        errBox.style.display = "block";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Se connecter à l'administration";
+      }
+    }
+
+    // Déconnexion
+    async function handleLogout() {
+      if (!confirm("Voulez-vous vraiment vous déconnecter ?")) return;
+      try {
+        if (supabaseClient) {
+          await supabaseClient.auth.signOut();
+        }
+      } catch (e) {
+        console.warn("Logout error", e);
+      }
+      currentSession = null;
+      showAuthView("Session terminée.");
+    }
+
+    // Requêtes HTTP sécurisées avec Authorization: Bearer JWT
+    async function apiRequest(endpoint, method = "GET", body = null) {
+      if (!supabaseClient) {
+        showAuthView("Supabase n'est pas initialisé");
+        throw new Error("Supabase non initialisé");
+      }
+
+      // 1. Récupération du JWT de session actif via getSession()
+      const { data: { session }, error: sessionErr } = await supabaseClient.auth.getSession();
+      if (sessionErr || !session) {
+        showAuthView("Votre session a expiré. Veuillez vous reconnecter.");
+        throw new Error("Session expirée");
+      }
+      currentSession = session;
+
+      // 2. Détermination de l'URL cible
+      let baseUrl = API_URL;
+      if (!baseUrl) {
+        // Déduction automatique : ${SUPABASE_URL}/functions/v1/admin-api
+        baseUrl = `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/admin-api`;
+      }
+
+      const cleanEndpoint = endpoint.replace(/^\//, '');
+      const fullUrl = cleanEndpoint ? `${baseUrl.replace(/\/$/, '')}/${cleanEndpoint}` : baseUrl;
+
+      // 3. Transmission automatique du JWT dans Authorization: Bearer et de la clé publique apikey
+      const headers = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`
+      };
+
+      if (SUPABASE_ANON_KEY) {
+        headers["apikey"] = SUPABASE_ANON_KEY;
+      }
+
+      try {
+        const res = await fetch(fullUrl, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : null
+        });
+
+        if (res.status === 401) {
+          showAuthView("Session invalide ou expirée (HTTP 401). Reconnectez-vous.");
+          throw new Error("Non autorisé (JWT invalide ou expiré)");
+        }
+
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          const msg = errData.error || "Accès refusé : votre compte n'a pas les droits administrateur requis.";
+          alert(`Erreur 403 : ${msg}`);
+          throw new Error(msg);
+        }
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `Erreur serveur (${res.status})`);
+        }
+
+        return await res.json();
+      } catch (e) {
+        showToast(`Erreur API: ${e.message}`);
+        throw e;
+      }
+    }
+
+    // Navigation entre onglets
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
+      document.getElementById(`tab-${tabId}`).classList.add("active");
+      event.currentTarget.classList.add("active");
+
+      if (tabId === "licenses") loadLicenses();
+      if (tabId === "technicians") loadTechnicians();
+      if (tabId === "logs") loadLogs();
+      if (tabId === "settings") {
+        document.getElementById("cfg-supabase-url").value = SUPABASE_URL;
+        document.getElementById("cfg-supabase-anon").value = SUPABASE_ANON_KEY;
+        document.getElementById("cfg-api-url").value = API_URL;
+      }
+    }
+
+    // Fonctions métiers du Dashboard
+    async function loadStats() {
+      try {
+        const stats = await apiRequest("stats");
+        document.getElementById("stat-active").innerText = stats.activeLicenses;
+        document.getElementById("stat-total").innerText = stats.totalLicenses;
+        document.getElementById("stat-techs").innerText = stats.technicians;
+        document.getElementById("stat-devices").innerText = stats.devices;
+      } catch (e) {
+        console.warn("Could not load stats", e);
+      }
+    }
+
+    async function loadLicenses() {
+      const tbody = document.getElementById("licenses-table-body");
+      try {
+        licensesList = await apiRequest("licenses");
+        loadStats();
+        if (!licensesList.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 2rem;">Aucune licence générée pour le moment.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = licensesList.map(lic => {
+          const techName = lic.technician ? lic.technician.full_name : '<span style="color:var(--text-muted);">Non attribué</span>';
+          let statusPill = `<span class="pill pill-${lic.status.toLowerCase()}">${lic.status}</span>`;
+          if (lic.expires_at && new Date(lic.expires_at) < new Date() && lic.status === "ACTIVE") {
+            statusPill = `<span class="pill pill-expired">EXPIRÉE</span>`;
+          }
+
+          const deviceDisplay = lic.device
+            ? `<strong>${lic.device.device_model || 'Android'}</strong><br><small style="color:var(--text-muted); font-family:var(--font-mono);">${lic.device.installation_id.slice(0, 10)}...</small>`
+            : '<span style="color:var(--text-muted); font-size:0.8rem;">Aucun appareil</span>';
+
+          const expiresDisplay = lic.duration_type === "PERMANENT"
+            ? '<span style="font-weight:600; color:var(--accent);">Permanent</span>'
+            : (lic.expires_at ? new Date(lic.expires_at).toLocaleDateString('fr-FR') : '-');
+
+          const lastSyncDisplay = lic.last_sync
+            ? new Date(lic.last_sync).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+            : '<span style="color:var(--text-muted); font-size:0.8rem;">Jamais</span>';
+
+          return `
+            <tr>
+              <td>
+                <span class="key-badge" onclick="copyToClipboard('${lic.license_key}')" title="Cliquer pour copier">
+                  ${lic.license_key}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                </span>
+              </td>
+              <td>${techName}</td>
+              <td><span style="font-size:0.8rem; font-weight:500;">${lic.duration_type.replace('_', ' ')}</span></td>
+              <td>${statusPill}</td>
+              <td>${deviceDisplay}</td>
+              <td>${expiresDisplay}</td>
+              <td>${lastSyncDisplay}</td>
+              <td style="text-align: right; white-space: nowrap;">
+                ${lic.status === "ACTIVE"
+                  ? `<button class="btn btn-warning btn-sm" onclick="setLicenseStatus('${lic.id}', 'suspend')">Suspendre</button>`
+                  : `<button class="btn btn-outline btn-sm" onclick="setLicenseStatus('${lic.id}', 'activate')">Réactiver</button>`
+                }
+                ${lic.status !== "REVOKED"
+                  ? `<button class="btn btn-danger btn-sm" onclick="setLicenseStatus('${lic.id}', 'revoke')">Révoquer</button>`
+                  : ''
+                }
+                <button class="btn btn-outline btn-sm" onclick="renewLicense('${lic.id}', '${lic.duration_type}')">Prolonger</button>
+                ${lic.device ? `<button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="unbindDevice('${lic.id}')">Délier</button>` : ''}
+              </td>
+            </tr>
+          `;
+        }).join("");
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--danger); padding: 2rem;">Erreur : ${e.message}</td></tr>`;
+      }
+    }
+
+    async function loadTechnicians() {
+      const tbody = document.getElementById("technicians-table-body");
+      try {
+        techniciansList = await apiRequest("technicians");
+        if (!techniciansList.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Aucun technicien enregistré.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = techniciansList.map(tech => `
+          <tr>
+            <td><strong>${tech.full_name}</strong></td>
+            <td>${tech.company || '-'}</td>
+            <td>${tech.email || '-'}</td>
+            <td>${tech.phone || '-'}</td>
+            <td>${tech.licenses ? tech.licenses.length : 0} licence(s)</td>
+            <td>${new Date(tech.created_at).toLocaleDateString('fr-FR')}</td>
+          </tr>
+        `).join("");
+
+        const select = document.getElementById("lic-tech-select");
+        select.innerHTML = '<option value="">-- Sans technicien attitré (libre) --</option>' +
+          techniciansList.map(t => `<option value="${t.id}">${t.full_name} (${t.company || 'Sans société'})</option>`).join("");
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger); padding: 2rem;">Erreur : ${e.message}</td></tr>`;
+      }
+    }
+
+    async function loadLogs() {
+      const tbody = document.getElementById("logs-table-body");
+      try {
+        const logs = await apiRequest("logs");
+        if (!logs.length) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 2rem;">Aucun événement enregistré.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = logs.map(log => {
+          const author = log.details?.performed_by?.admin_email || log.details?.created_by?.admin_email || "Système";
+          return `
+            <tr>
+              <td style="white-space:nowrap; font-size:0.8rem; color:var(--text-muted);">${new Date(log.created_at).toLocaleString('fr-FR')}</td>
+              <td><span class="pill pill-active" style="background:#e0f2fe; color:#0369a1;">${log.action}</span></td>
+              <td><strong>${log.license ? log.license.license_key : '-'}</strong> ${log.license && log.license.technician ? `(${log.license.technician.full_name})` : ''}</td>
+              <td style="font-family:var(--font-mono); font-size:0.75rem; color:#475569;">
+                <div>Par : <strong>${author}</strong></div>
+                <div>${JSON.stringify(log.details || {})}</div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--danger); padding: 2rem;">Erreur : ${e.message}</td></tr>`;
+      }
+    }
+
+    async function setLicenseStatus(licenseId, action) {
+      if (!confirm(`Confirmer l'opération : ${action.toUpperCase()} sur cette licence ?`)) return;
+      try {
+        await apiRequest(`licenses/${licenseId}/${action}`, "POST");
+        showToast(`Statut mis à jour : ${action}`);
+        loadLicenses();
+      } catch (e) {}
+    }
+
+    async function unbindDevice(licenseId) {
+      if (!confirm("Voulez-vous dissocier le téléphone actuel de cette licence ? Le technicien pourra l'activer sur un nouveau smartphone.")) return;
+      try {
+        await apiRequest(`licenses/${licenseId}/unbind`, "POST");
+        showToast("Téléphone dissocié avec succès.");
+        loadLicenses();
+      } catch (e) {}
+    }
+
+    async function renewLicense(licenseId, currentType) {
+      const duration = prompt("Entrez la nouvelle durée (1_MONTH, 3_MONTHS, 6_MONTHS, 1_YEAR, PERMANENT) :", currentType);
+      if (!duration) return;
+      try {
+        await apiRequest(`licenses/${licenseId}/renew`, "POST", { duration_type: duration });
+        showToast("Licence prolongée avec succès.");
+        loadLicenses();
+      } catch (e) {}
+    }
+
+    function openCreateLicenseModal() {
+      loadTechnicians();
+      document.getElementById("modal-license").style.display = "flex";
+    }
+
+    function openCreateTechModal() {
+      document.getElementById("modal-tech").style.display = "flex";
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = "none";
+    }
+
+    async function submitCreateLicense() {
+      const technician_id = document.getElementById("lic-tech-select").value || null;
+      const duration_type = document.getElementById("lic-duration").value;
+      const custom_key = document.getElementById("lic-custom-key").value;
+      const notes = document.getElementById("lic-notes").value;
+
+      try {
+        await apiRequest("licenses", "POST", { technician_id, duration_type, custom_key, notes });
+        showToast("Licence générée avec succès !");
+        closeModal("modal-license");
+        loadLicenses();
+      } catch (e) {}
+    }
+
+    async function submitCreateTech() {
+      const full_name = document.getElementById("tech-name").value;
+      const company = document.getElementById("tech-company").value;
+      const email = document.getElementById("tech-email").value;
+      const phone = document.getElementById("tech-phone").value;
+      const notes = document.getElementById("tech-notes").value;
+
+      if (!full_name) {
+        alert("Le nom complet est obligatoire");
+        return;
+      }
+
+      try {
+        await apiRequest("technicians", "POST", { full_name, company, email, phone, notes });
+        showToast("Technicien ajouté !");
+        closeModal("modal-tech");
+        loadTechnicians();
+      } catch (e) {}
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`Clé copiée : ${text}`);
+      });
+    }
+
+    function saveSettings() {
+      SUPABASE_URL = document.getElementById("cfg-supabase-url").value.trim();
+      SUPABASE_ANON_KEY = document.getElementById("cfg-supabase-anon").value.trim();
+      API_URL = document.getElementById("cfg-api-url").value.trim();
+
+      localStorage.setItem("nokia_lic_supabase_url", SUPABASE_URL);
+      localStorage.setItem("nokia_lic_supabase_anon", SUPABASE_ANON_KEY);
+      localStorage.setItem("nokia_lic_api_url", API_URL);
+
+      initSupabaseClient();
+      showToast("Paramètres Supabase sauvegardés.");
+      loadLicenses();
+    }
+
+    // Initialisation au chargement de la page
+    window.addEventListener("DOMContentLoaded", () => {
+      checkExistingSession();
+    });
+  </script>
+</body>
+</html>

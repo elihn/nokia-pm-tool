@@ -1,0 +1,6 @@
+{
+  "name": "Nokia PM Tool",
+  "description": "Mobile PM report tool for Nokia microwave links with Excel workbook analysis, geotagged photos, and automated ExcelJS filling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

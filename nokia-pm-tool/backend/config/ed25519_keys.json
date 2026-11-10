@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-11-09T15:05:31.687Z",
+  "publicKeyHex": "291443119ec1d1f8b189bb9873d690e1d37c67948fba1b1baf035ba312fb8074",
+  "publicKeyBase64": "KRRDEZ7B0fixibuYc9aQ4dN8Z5SPuhsbrwNboxL7gHQ=",
+  "privateKeyHex": "24726a9eb1aaa3b78226b9f8e58e7fffc53dd2a1fd43fbcb8463c7e3d14358f0",
+  "privateKeyBase64": "JHJqnrGqo7eCJrn45Y5//8U90qH9Q/vLhGPH49FDWPA=",
+  "instructions": {
+    "serverSecret": "Ajoutez ED25519_PRIVATE_KEY dans les secrets Supabase Edge Functions",
+    "clientConfig": "Intégrez publicKeyHex dans LicenseManager.kt côté Android"
+  }
+}

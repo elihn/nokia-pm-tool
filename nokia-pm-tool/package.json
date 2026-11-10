@@ -1,0 +1,17 @@
+{
+  "name": "nokia-pm-tool-backend",
+  "version": "1.0.0",
+  "description": "Nokia PM Tool Licensing Server & Administration Dashboard",
+  "main": "backend/server/server.js",
+  "scripts": {
+    "start": "node backend/server/server.js",
+    "server": "node backend/server/server.js"
+  },
+  "keywords": [
+    "nokia",
+    "licensing",
+    "admin"
+  ],
+  "author": "",
+  "license": "ISC"
+}

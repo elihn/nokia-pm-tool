@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Nokia PM Field Tool</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top App Bar -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">NOKIA PM FIELD</div>
+        <div class="brand-subtitle" id="currentSiteLabel">Select or Import Site Template</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <span class="badge badge-success" id="offlineBadge">
+        <span style="font-size: 8px;">●</span> OFFLINE
+      </span>
+      <span class="badge badge-accent" id="autoSavedBadge" style="display: none;">Saved</span>
+    </div>
+  </header>
+
+  <!-- Bandeau persistant " Link i/N · hop · IDU x" avec navigation rapide -->
+  <div id="visitTopBanner" style="display: none; background: rgba(0, 102, 255, 0.18); border-bottom: 1px solid rgba(0, 102, 255, 0.35); padding: 6px 12px; font-size: 12px; font-weight: 600; color: #70d6ff; justify-content: space-between; align-items: center; z-index: 90; gap: 8px;">
+    <button class="btn btn-sm btn-outline" id="btnBannerPrevLink" style="padding: 2px 7px; font-size: 11px; border-color: rgba(112, 214, 255, 0.4); color: #70d6ff;" title=" Link précédent">◀ Préc.</button>
+    <div id="visitTopBannerText" style="flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Link 1/1 · Hop · IDU 1</div>
+    <button class="btn btn-sm btn-outline" id="btnBannerNextLink" style="padding: 2px 7px; font-size: 11px; border-color: rgba(112, 214, 255, 0.4); color: #70d6ff;" title=" Link suivant">Suiv. ▶</button>
+    <button class="btn btn-sm btn-primary" id="btnBannerGoToVisit" style="padding: 2px 8px; font-size: 11px;">
+      Suivi
+    </button>
+  </div>
+
+  <!-- 0. Tab: Visite Multi- Links & Écran de Suivi Global -->
+  <main id="tab-visit" class="tab-content">
+    <!-- TABLEAU DE BORD : ÉCRAN DE SUIVI DE LA VISITE (Étape 2) -->
+    <div class="card" style="background: linear-gradient(180deg, rgba(0, 45, 98, 0.6) 0%, rgba(0, 23, 51, 0.8) 100%); border: 1px solid rgba(0, 102, 255, 0.4);">
+      <div class="card-header" style="margin-bottom: 10px;">
+        <div class="card-title" style="font-size: 17px; display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Suivi d'avancement de la Visite
+        </div>
+        <span class="badge badge-accent" id="trackingProgressBadge">0 / 0 Terminés</span>
+      </div>
+
+      <!-- Barre de progression globale -->
+      <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 10px; overflow: hidden; margin-bottom: 8px;">
+        <div id="trackingProgressBar" style="background: linear-gradient(90deg, #0066ff, #00e676); width: 0%; height: 100%; transition: width 0.4s ease;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+        <span id="trackingProgressPercent">0% complété</span>
+        <span id="trackingProgressCount">0 link sur 0 terminés</span>
+      </div>
+
+      <!-- Bandeau link actif en cours -->
+      <div style="background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 12px;">
+        <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;"> Link actif en cours d'édition</div>
+        <div id="visitActiveLinkBanner" style="font-size: 14px; font-weight: 700; color: #fff; margin-top: 2px;">
+          Link 1/1 · Hop · IDU 1
+        </div>
+      </div>
+
+      <!-- Boutons d'action principaux : Continuer & Exporter -->
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-primary" id="btnTrackingContinue" style="flex: 1.2; font-weight: 700; background: linear-gradient(135deg, #0066ff, #00e5ff); border: none; padding: 10px 14px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Continuer
+        </button>
+        <button class="btn btn-success" id="btnExportVisit" style="flex: 1; font-weight: 700; background: linear-gradient(135deg, #00b0ff, #00e676); color: #002233; border: none; padding: 10px 12px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span id="btnExportVisitText">Exporter</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtres et Recherche de link -->
+    <div class="card" style="padding: 10px; margin-bottom: 10px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <input type="text" id="trackingSearchInput" placeholder="🔍 Filtrer les link (nom, hop...)" style="flex: 1; font-size: 13px; padding: 8px 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: #fff;">
+      </div>
+      <div style="display: flex; gap: 6px; overflow-x: auto;" id="trackingFilterPills">
+        <button class="btn btn-sm btn-primary filter-pill active" data-filter="all" id="filterAll">Tous (<span id="countFilterAll">0</span>)</button>
+        <button class="btn btn-sm btn-outline filter-pill" data-filter="incomplete" id="filterIncomplete">Incomplets (<span id="countFilterIncomplete">0</span>)</button>
+        <button class="btn btn-sm btn-outline filter-pill" data-filter="complete" id="filterComplete">Terminés (<span id="countFilterComplete">0</span>)</button>
+      </div>
+    </div>
+
+    <!-- Section 1 : Suivi SITE -->
+    <div class="card" id="trackingSiteSection">
+      <div class="card-header" style="margin-bottom: 8px;">
+        <div class="card-title" style="font-size: 14px; display: flex; align-items: center; gap: 6px;">
+          <span class="badge" id="trackingSiteStatusBadge" style="background: rgba(0, 230, 118, 0.2); color: #00e676;">SITE</span>
+          Éléments Communs du Site
+        </div>
+        <button class="btn btn-sm btn-outline" id="btnGoToSiteFields" style="padding: 2px 8px; font-size: 11px;">Modifier Site</button>
+      </div>
+      <div id="trackingSiteGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; font-size: 11px;">
+        <!-- Rendu dynamique -->
+      </div>
+    </div>
+
+    <!-- Section 2 : Suivi par GROUPE IDU -->
+    <div class="card" id="trackingIdusSection">
+      <div class="card-header" style="margin-bottom: 8px;">
+        <div class="card-title" style="font-size: 14px;">Groupes IDU (Équipements Intérieurs)</div>
+        <button class="btn btn-sm btn-outline" id="btnNewIduModal" style="padding: 2px 8px; font-size: 11px;">+ Nouvel IDU</button>
+      </div>
+      <div id="trackingIdusContainer" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- Rendu dynamique par IDU -->
+      </div>
+    </div>
+
+    <!-- Section 3 : LISTE DES LIENS REGROUPÉS PAR IDU -->
+    <div id="trackingLinksByIduContainer" style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- Rendu dynamique des cartes de link regroupés par IDU -->
+    </div>
+
+    <!-- Actions avancées de gestion de visite -->
+    <div class="card" style="margin-top: 14px;">
+      <div class="card-header" style="margin-bottom: 8px;">
+        <div class="card-title" style="font-size: 13px; color: var(--text-muted);">Gestion des fichiers de la visite</div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-outline" style="flex: 1; font-size: 12px;" id="btnAddLinksToVisit">
+          + Ajouter des link (.xlsx)
+        </button>
+        <button class="btn btn-outline" style="flex: 1; font-size: 12px; color: var(--danger); border-color: rgba(255, 59, 48, 0.4);" id="btnNewVisitFromTab">
+          Nouvelle Visite
+        </button>
+      </div>
+      <input type="file" id="addLinksFileInput" accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple style="display: none;">
+    </div>
+  </main>
+
+  <!-- 1. Tab: Template & Common Info -->
+  <main id="tab-template" class="tab-content active">
+    <!-- Template Loader Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          1. Site Excel Template (.xlsx)
+        </div>
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Import the site's specific Excel template or load the pre-configured Nokia PM sample. The app dynamically analyzes the layout without hardcoded cell positions.
+      </p>
+
+      <div style="display: flex; gap: 8px; flex-direction: column;">
+        <input type="file" id="templateFileInput" accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple style="display: none;">
+        <button class="btn btn-primary btn-full" id="btnImportTemplate">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Import Site Template (.xlsx)
+        </button>
+
+        <button class="btn btn-secondary btn-full" id="btnLoadSampleTemplate" style="display:none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="10 8 16 12 10 16 10 8"/>
+          </svg>
+          Load Nokia MSS Demo Template
+        </button>
+      </div>
+
+      <!-- Active Loaded Template Indicator -->
+      <div id="loadedTemplateCard" style="display: none; margin-top: 12px; padding: 10px 12px; background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: var(--radius-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 12px; color: var(--text-muted);">Active Template:</div>
+          <span class="badge badge-success" id="loadedTemplateStatus">Loaded</span>
+        </div>
+        <div id="loadedTemplateNameDisplay" style="font-weight: 700; font-size: 13px; color: #fff; margin-top: 4px; word-break: break-all;">
+          Nokia_MSS_HE_PM.xlsx
+        </div>
+      </div>
+
+      <!-- Analysis Summary -->
+      <div id="templateAnalysisSummary" style="display: none; margin-top: 16px;">
+        <div class="card-header" style="margin-bottom: 8px;">
+          <div class="card-title" style="font-size: 13px; color: var(--accent);">Detected Template Structure</div>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-stat-box">
+            <div class="summary-stat-number" id="sumSheetsCount">0</div>
+            <div class="summary-stat-label">Sheets</div>
+          </div>
+          <div class="summary-stat-box">
+            <div class="summary-stat-number" id="sumInspCount">0</div>
+            <div class="summary-stat-label">Inspection Items</div>
+          </div>
+          <div class="summary-stat-box">
+            <div class="summary-stat-number" id="sumPhotoCount">0</div>
+            <div class="summary-stat-label">Geotag Slots</div>
+          </div>
+          <div class="summary-stat-box">
+            <div class="summary-stat-number" id="sumMonCount">0</div>
+            <div class="summary-stat-label">Screenshots</div>
+          </div>
+        </div>
+        <div id="templateWarnings"></div>
+      </div>
+    </div>
+
+    <!-- Common Site Header Info -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          2. Common Site & Link Information
+        </div>
+        <button class="btn btn-sm btn-outline" id="btnCopyPreviousPM">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Copy from Previous PM
+        </button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>SITE NAME</label>
+          <input type="text" id="inputSiteName" placeholder="e.g.  SITE_NAME">
+        </div>
+        <div class="form-group">
+          <label>PROJECT NAME</label>
+          <input type="text" id="inputProjectName" value="H-TELI">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>HOP NAME</label>
+        <input type="text" id="inputHopName" placeholder="SITE_NAME TO  SITE_B_NAME">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>SITE A NAME</label>
+          <input type="text" id="inputSiteA" placeholder="Site A">
+        </div>
+        <div class="form-group">
+          <label>SITE B NAME</label>
+          <input type="text" id="inputSiteB" placeholder="Site B">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>CLIENT</label>
+          <input type="text" id="inputClient" value="Airtel Madagascar">
+        </div>
+        <div class="form-group">
+          <label>PARTNER NAME</label>
+          <input type="text" id="inputPartner" value="H-TELI">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>COUNTRY</label>
+          <input type="text" id="inputCountry" value="Madagascar">
+        </div>
+        <div class="form-group">
+          <label>DATE</label>
+          <input type="text" id="inputDate">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>TT REFERENCE / NOTE</label>
+          <input type="text" id="inputTTRef" placeholder="e.g. TT.MG 0070355">
+        </div>
+        <div class="form-group">
+          <label>PM DESCRIPTION</label>
+          <input type="text" id="inputPMDesc" value="Active PM, Transmission">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>FOE NAME</label>
+          <input type="text" id="inputFoeName" placeholder="e.g. ELIE">
+        </div>
+        <div class="form-group">
+          <label>FOE CONTACT</label>
+          <input type="text" id="inputFoeContact" placeholder="e.g. +261331077902">
+        </div>
+      </div>
+
+      <!-- GPS Coordinates with quick acquisition (strictly for Cover page) -->
+      <div style="background: var(--bg-surface-raised); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-top: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="font-size: 13px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+            </svg>
+            Site GPS Coordinates (Telecom DMS)
+          </div>
+          <button class="btn btn-sm btn-accent" id="btnAcquireGPS">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Position GPS
+          </button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>SITE LONGITUDE</label>
+            <input type="text" id="inputSiteLong" placeholder="-19°41'18,412&quot;S">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>SITE LATITUDE</label>
+            <input type="text" id="inputSiteLat" placeholder="47°2'15,414&quot;E">
+          </div>
+        </div>
+        <div id="gpsStatusText" style="font-size: 11px; color: var(--text-muted); margin-top: 6px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 2. Tab: Saisie Terrain / Checklist Guidée (Section 6) -->
+  <main id="tab-field" class="tab-content">
+    <!-- Progress Header -->
+    <div class="card" style="margin-bottom: 12px; padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 14px; font-weight: 700; color: #fff;">Checklist Guidée Terrain</div>
+        <div class="badge badge-accent" id="wizardGlobalProgressBadge">Item 1 / 1</div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar" id="wizardProgressBar"></div>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <select id="wizardItemSelector" style="font-size: 13px; padding: 8px; flex: 1;">
+          <!-- Dynamically populated list of items -->
+        </select>
+      </div>
+
+      <!-- TimeStamp Camera helper note -->
+      <div style="background: rgba(255, 179, 0, 0.1); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; margin-top: 10px; font-size: 11px; color: #ffe082;">
+        💡 <strong>Astuce Photo :</strong> Pour utiliser TimeStamp, définissez-la comme application caméra par défaut, ou prenez la photo avec elle puis utilisez Gallery.
+      </div>
+    </div>
+
+    <!-- Active Item Focus Card -->
+    <div class="wizard-container" id="wizardActiveItemCard">
+      <!-- Rendered dynamically for single-item focus -->
+    </div>
+  </main>
+
+  <!-- 3. Tab: Cover & Link Status -->
+  <main id="tab-cover" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          Link Status Evaluation
+        </div>
+      </div>
+
+      <div style="background: var(--bg-surface-raised); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff; font-size: 13px; font-weight: 700;">
+          <input type="radio" name="linkStatusOption" value="fine" checked style="width: 18px; height: 18px; accent-color: var(--success);">
+          LINK MAINTAINED, WORKING FINE WITH ANY ALARMS/FAULT
+        </label>
+        <div style="font-size: 11px; color: var(--success); margin-left: 28px; margin-top: 4px;">
+          ✓ Link operating normally at nominal throughput and RSL
+        </div>
+      </div>
+
+      <div style="background: var(--bg-surface-raised); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff; font-size: 13px; font-weight: 700;">
+          <input type="radio" name="linkStatusOption" value="minor" style="width: 18px; height: 18px; accent-color: var(--warning);">
+          LINK MAINTAINED, WORKING WITH MINOR SNAGS
+        </label>
+        <div id="minorSnagsInputs" style="margin-left: 28px; margin-top: 8px;">
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Number of items</label>
+              <input type="number" id="inputMinorSnagsCount" placeholder="e.g. 2">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Page N°</label>
+              <input type="text" id="inputMinorSnagsPage" placeholder="e.g. Page 4">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-surface-raised); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff; font-size: 13px; font-weight: 700;">
+          <input type="radio" name="linkStatusOption" value="major" style="width: 18px; height: 18px; accent-color: var(--danger);">
+          LINK ABNORMAL WITH MAJOR / CRITICAL ALARM / FAULT
+        </label>
+        <div id="majorAlarmsInputs" style="margin-left: 28px; margin-top: 8px;">
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Number of items</label>
+              <input type="number" id="inputMajorAlarmsCount" placeholder="e.g. 1">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>Page N°</label>
+              <input type="text" id="inputMajorAlarmsPage" placeholder="e.g. Page 6">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 3b. Tab: Radio Configuration & Tests -->
+  <main id="tab-radio" class="tab-content">
+    <!-- Header banner -->
+    <div class="card" style="margin-bottom: 12px; background: linear-gradient(135deg, rgba(0, 119, 255, 0.15), rgba(0, 229, 255, 0.05)); border: 1px solid var(--accent);">
+      <div class="card-header" style="margin-bottom: 6px; border: none; padding-bottom: 0;">
+        <div class="card-title" style="color: var(--accent);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v8M4.93 4.93l4.24 4.24M19.07 4.93l-4.24 4.24M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 0v6"/>
+          </svg>
+          Radio Configuration & Performance Tests
+        </div>
+        <span class="badge badge-accent" id="radioSheetDetectedBadge">Detected</span>
+      </div>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 0;">
+        Directly configure microwave system parameters, frequency plan, and ODU port performance measurements (RSL, BER, Alarms).
+      </p>
+    </div>
+
+    <!-- 1. System Configuration Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          System Configuration
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Equipment</label>
+          <input type="text" id="inputRadioEquipment" placeholder="e.g. UBT-T, MSS HE">
+        </div>
+        <div class="form-group">
+          <label>Link Configuration</label>
+          <input type="text" id="inputRadioLinkConfig" placeholder="e.g. 1+0, 2+0">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>E1 mapping [CH]</label>
+          <input type="text" id="inputRadioE1Mapping" placeholder="e.g. 0">
+        </div>
+        <div class="form-group">
+          <label>STM1 mapping [CH]</label>
+          <input type="text" id="inputRadioStm1Mapping" placeholder="e.g. 0">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Ethernet Bandwidth [Mbps]</label>
+        <input type="text" id="inputRadioEthernetBw" placeholder="e.g. 158.429 Mbps">
+      </div>
+    </div>
+
+    <!-- 2. Frequency Assignment Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 12h20M7 8l-5 4 5 4M17 8l5 4-5 4"/>
+          </svg>
+          Frequency Assignment
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>TX [MHz] / [kHz]</label>
+          <input type="text" id="inputRadioTxFreq" placeholder="e.g. 6123kHz">
+        </div>
+        <div class="form-group">
+          <label>RX [MHz] / [kHz]</label>
+          <input type="text" id="inputRadioRxFreq" placeholder="e.g. 6375 kHz">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Channel spacing</label>
+          <input type="text" id="inputRadioChannelSpacing" placeholder="e.g. 28 MHz">
+        </div>
+        <div class="form-group">
+          <label>Modulation</label>
+          <input type="text" id="inputRadioModulation" placeholder="e.g. 128 QAM">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Site Level (Frequency Role)</label>
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <button type="button" class="btn btn-sm" id="btnRadioRoleLow" style="flex: 1; min-height: 34px; background: var(--primary); color: #fff; font-weight: 700;">
+            Site Low (LOW)
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary" id="btnRadioRoleHigh" style="flex: 1; min-height: 34px;">
+            Site High (HIGH)
+          </button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Site High</label>
+          <input type="text" id="inputRadioSiteHigh" placeholder="HIGH or blank">
+        </div>
+        <div class="form-group">
+          <label>Site Low</label>
+          <input type="text" id="inputRadioSiteLow" placeholder="e.g. LOW">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Radio Performance & Tests Table Card -->
+    <div class="card">
+      <div class="card-header" style="flex-wrap: wrap; gap: 8px;">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Radio Performance & Tests
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+        </div>
+      </div>
+
+      <!-- Quick Batch Actions -->
+      <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
+        <button class="btn btn-sm btn-success" id="btnRadioSetAllOk">✓ Set Port 1 OK</button>
+        <button class="btn btn-sm btn-secondary" id="btnRadioSetInactiveNA">Set Ports 2-8 NA</button>
+        <button class="btn btn-sm btn-outline" id="btnRadioSetAllNA">Set All NA</button>
+      </div>
+
+      <!-- View Mode Switcher: Cards vs Table -->
+      <div style="display: flex; gap: 6px; margin-bottom: 12px; background: var(--bg-input); padding: 4px; border-radius: var(--radius-sm);">
+        <button class="btn btn-sm" id="btnRadioViewCards" style="flex: 1; min-height: 32px; background: var(--primary); color: #fff;">
+          Cards Mode
+        </button>
+        <button class="btn btn-sm btn-secondary" id="btnRadioViewTable" style="flex: 1; min-height: 32px; background: transparent; border: none;">
+          Table Mode (Excel Grid)
+        </button>
+      </div>
+
+      <!-- Dynamic Cards Container -->
+      <div id="radioTestsCardsContainer"></div>
+
+      <!-- Dynamic Table Container -->
+      <div id="radioTestsTableContainer" style="display: none; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-top: 8px;"></div>
+    </div>
+  </main>
+
+  <main id="tab-inspection" class="tab-content">
+    <div class="card" style="padding-bottom: 8px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <path d="M9 15l2 2 4-4"/>
+          </svg>
+          Physical Installation Inspection
+        </div>
+      </div>
+
+      <div id="inspectionSheetTabs" style="display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto;">
+        <!-- Filled dynamically -->
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+        <button class="btn btn-sm btn-success" id="btnSetAllOk">✓ Set All OK</button>
+        <button class="btn btn-sm btn-secondary" id="btnSetAllNA">Set All NA</button>
+        <button class="btn btn-sm btn-outline" id="btnAddInspectionItem">+ Add Item</button>
+      </div>
+
+      <div id="inspectionGroupFilters" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px;">
+        <!-- Filter pills -->
+      </div>
+    </div>
+
+    <div id="inspectionItemsList">
+      <!-- Items dynamically populated -->
+    </div>
+  </main>
+
+  <!-- 5. Tab: Geotag Photo Gallery -->
+  <main id="tab-geotags" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          Geotag Photo Report
+        </div>
+        <div class="badge badge-accent" id="geotagProgressBadge">0 / 0 Done</div>
+      </div>
+
+      <!-- TimeStamp Camera helper note -->
+      <div style="background: rgba(255, 179, 0, 0.1); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; font-size: 11px; color: #ffe082;">
+        💡 <strong>Astuce Photo :</strong> Pour utiliser TimeStamp, définissez-la comme application caméra par défaut, ou prenez la photo avec elle puis utilisez Gallery.
+      </div>
+
+      <div id="geotagSheetTabs" style="display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+
+    <!-- Hidden file/camera inputs (Two distinct fields: Camera single vs Gallery multiple) -->
+    <!-- Point 2: Camera without multiple attribute to launch default camera application -->
+    <input type="file" id="photoCameraInput" accept="image/*" capture="environment" style="display: none;">
+    <!-- Point 2: Gallery with multiple attribute without capture to pick 1 or more photos -->
+    <input type="file" id="photoGalleryInput" accept="image/*" multiple style="display: none;">
+
+    <div id="geotagSlotsContainer">
+      <!-- Dynamically populated photo requirement cards -->
+    </div>
+  </main>
+
+  <!-- 6. Tab: Structure du Template (Section 4) -->
+  <main id="tab-structure" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="4 7 4 4 20 4 20 7"/>
+            <line x1="9" y1="20" x2="15" y2="20"/>
+            <line x1="12" y1="4" x2="12" y2="20"/>
+          </svg>
+          Structure du Template (Sheets & Items)
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Add, duplicate, delete, or reorder sheets and items. Item numbers and "Page x/y" are automatically recomputed.
+      </p>
+
+      <!-- Sheet actions -->
+      <div style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
+        <button class="btn btn-sm btn-primary" id="btnDuplicateSheetModal">
+          + Duplicate Sheet
+        </button>
+        <button class="btn btn-sm btn-outline" id="btnAddRadioPortBtn">
+          + Add Radio Port Column
+        </button>
+      </div>
+
+      <!-- Sheet selector for structure editing -->
+      <div class="form-group">
+        <label>Select Sheet to Edit Items</label>
+        <select id="structureSheetSelect" style="font-size: 13px; padding: 10px;">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <!-- Items List in Structure -->
+      <div id="structureItemsList" style="margin-top: 12px;">
+        <!-- Populated dynamically with move up/down, edit, delete -->
+      </div>
+    </div>
+  </main>
+
+  <!-- 7. Tab: Mode Libre / Secours (Section 5) -->
+  <main id="tab-free-grid" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+            <line x1="15" y1="3" x2="15" y2="21"/>
+          </svg>
+          Mode Libre / Secours (Grille Excel)
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Touch any cell in the sheet grid to edit text, set OK/NOT OK/NA status, or insert an image into that exact cell!
+      </p>
+
+      <div class="form-group">
+        <label>Sheet to Inspect</label>
+        <select id="freeModeSheetSelect" style="font-size: 13px; padding: 10px;">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <!-- Interactive Grid Table -->
+      <div class="excel-grid-container" id="freeModeGridContainer">
+        <!-- Rendered HTML Table of Excel cells -->
+      </div>
+    </div>
+  </main>
+
+  <!-- 8. Tab: Signatures Tactiles (Section 6) -->
+  <main id="tab-signatures" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          Tactile Signatures (Pad)
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+        Sign directly with touch. Signatures are automatically stamped into the "SIG." cell blocks across all sheets in the Excel report.
+      </p>
+
+      <!-- Signature 1: FOE Representative -->
+      <div class="card" style="background: var(--bg-surface-raised); margin-bottom: 14px;">
+        <div style="font-weight: 700; font-size: 14px; color: var(--accent); margin-bottom: 6px;">
+          1. PARTNER REPRESENTATIVE (FOE: <span id="sigFoeNameDisplay">ELIE</span>)
+        </div>
+        <canvas class="sig-canvas-box" id="sigCanvasFoe"></canvas>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-sm btn-secondary" id="btnClearSigFoe">Clear</button>
+          <button class="btn btn-sm btn-primary" id="btnSaveSigFoe">Save FOE Signature</button>
+        </div>
+      </div>
+
+      <!-- Signature 2: Partner Expert -->
+      <div class="card" style="background: var(--bg-surface-raised); margin-bottom: 14px;">
+        <div style="font-weight: 700; font-size: 14px; color: var(--accent); margin-bottom: 6px;">
+          2. PARTNER EXPERT APPROVAL
+        </div>
+        <canvas class="sig-canvas-box" id="sigCanvasExpert"></canvas>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-sm btn-secondary" id="btnClearSigExpert">Clear</button>
+          <button class="btn btn-sm btn-primary" id="btnSaveSigExpert">Save Expert Signature</button>
+        </div>
+      </div>
+
+      <!-- Signature 3: Airtel Approval -->
+      <div class="card" style="background: var(--bg-surface-raised); margin-bottom: 14px;">
+        <div style="font-weight: 700; font-size: 14px; color: var(--accent); margin-bottom: 6px;">
+          3. AIRTEL APPROVAL
+        </div>
+        <canvas class="sig-canvas-box" id="sigCanvasAirtel"></canvas>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-sm btn-secondary" id="btnClearSigAirtel">Clear</button>
+          <button class="btn btn-sm btn-primary" id="btnSaveSigAirtel">Save Airtel Signature</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 9. Tab: Export & Checklist -->
+  <main id="tab-export" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export Preventive Maintenance Report
+        </div>
+      </div>
+
+      <!-- Missing Items Warning Alert -->
+      <div id="missingItemsAlert" style="display: none; margin-bottom: 12px;"></div>
+
+      <!-- Option consigne sous photo -->
+      <div style="background: var(--bg-surface-raised); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff; font-size: 13px; font-weight: 600;">
+          <input type="checkbox" id="chkKeepInstruction" style="width: 18px; height: 18px; accent-color: var(--accent);">
+          Garder le texte de la consigne sous la photo
+        </label>
+        <div style="font-size: 11px; color: var(--text-muted); margin-left: 28px; margin-top: 4px;">
+          (Par défaut non coché : la photo recouvre le texte de la consigne)
+        </div>
+      </div>
+
+      <!-- Point 4: Réglage du mode d'ajustement des photos dans les cellules Excel -->
+      <div style="background: var(--bg-surface-raised); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px;">
+        <label for="selectPhotoFitMode" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 6px;">
+          Mode d'ajustement des photos dans les cellules Excel :
+        </label>
+        <select id="selectPhotoFitMode" style="font-size: 13px; padding: 10px; width: 100%; border-radius: 4px; background: #001733; color: #fff; border: 1px solid var(--border-color);">
+          <option value="fit" selected>Ajuster sans déformer (par défaut : visible, centrée, marge 3px)</option>
+          <option value="fill">Remplir la cellule (recadrage centré)</option>
+          <option value="stretch">Étirer (dimensions exactes de la cellule)</option>
+        </select>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+          Les dimensions en pixels sont calculées dynamiquement selon la largeur et hauteur des cellules du template.
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" id="btnExportAndShare" style="margin-bottom: 10px; font-size: 15px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="18" cy="5" r="3"/>
+          <circle cx="6" cy="12" r="3"/>
+          <circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        Generate & Share Excel Report (.xlsx)
+      </button>
+
+      <button class="btn btn-secondary btn-full" id="btnDirectDownload">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Direct Download File
+      </button>
+    </div>
+
+    <!-- Readiness Checklist -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Report Readiness Checklist</div>
+      </div>
+      <div id="readinessChecklist"></div>
+    </div>
+
+    <!-- Saved Drafts -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Saved Local PM Drafts</div>
+      </div>
+      <div id="savedReportsList"></div>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation Bar (Tabs) -->
+  <nav class="bottom-nav">
+    <button class="nav-tab" data-tab="tab-visit" id="navTabVisit">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Visite
+    </button>
+    <button class="nav-tab active" data-tab="tab-template">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Template
+    </button>
+    <button class="nav-tab" data-tab="tab-field">
+      <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Saisie
+    </button>
+    <button class="nav-tab" data-tab="tab-radio">
+      <svg viewBox="0 0 24 24"><path d="M12 2v8M4.93 4.93l4.24 4.24M19.07 4.93l-4.24 4.24M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 0v6"/></svg>
+      Radio
+    </button>
+    <button class="nav-tab" data-tab="tab-inspection">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Inspect
+    </button>
+    <button class="nav-tab" data-tab="tab-geotags">
+      <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Photos
+    </button>
+    <button class="nav-tab" data-tab="tab-structure">
+      <svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+      Structure
+    </button>
+    <button class="nav-tab" data-tab="tab-free-grid">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      Grille
+    </button>
+    <button class="nav-tab" data-tab="tab-signatures">
+      <svg viewBox="0 0 24 24"><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Sign
+    </button>
+    <button class="nav-tab" data-tab="tab-export">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+  </nav>
+
+  <!-- Photo Preview & Confirmation Modal -->
+  <div class="modal-overlay" id="photoPreviewModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="photoModalTitle">Photo Preview</div>
+        <button class="close-btn" id="btnClosePhotoModal">&times;</button>
+      </div>
+      <div style="width: 100%; border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; background: #000;">
+        <img id="modalPreviewImage" style="width: 100%; display: block;" alt="Preview">
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;" id="modalGeotagDetails"></div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-secondary" style="flex: 1;" id="btnRetakePhoto">Retake Photo</button>
+        <button class="btn btn-primary" style="flex: 1;" id="btnConfirmPhoto">Accept & Use</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Duplicate Sheet Modal -->
+  <div class="modal-overlay" id="duplicateSheetModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Duplicate Existing Sheet</div>
+        <button class="close-btn" id="btnCloseDupSheetModal">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Source Sheet to Clone</label>
+        <select id="dupSourceSheetSelect"></select>
+      </div>
+      <div class="form-group">
+        <label>New Sheet Name</label>
+        <input type="text" id="dupNewSheetNameInput" placeholder="e.g. Geotag photo report (4)">
+      </div>
+      <button class="btn btn-primary btn-full" id="btnConfirmDuplicateSheet">Create Sheet Duplicate</button>
+    </div>
+  </div>
+
+  <!-- Free Mode Cell Edit Modal -->
+  <div class="modal-overlay" id="freeCellModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="freeCellModalTitle">Edit Cell</div>
+        <button class="close-btn" id="btnCloseFreeCellModal">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Cell Value (Text / Number)</label>
+        <input type="text" id="freeCellTextInput">
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label>Quick Status Choices</label>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn-sm btn-success" id="btnFreeCellOk">OK</button>
+          <button class="btn btn-sm btn-secondary" id="btnFreeCellNA">NA</button>
+          <button class="btn btn-sm btn-outline" id="btnFreeCellNotOk" style="color: var(--danger); border-color: var(--danger);">NOT OK</button>
+        </div>
+      </div>
+      <div style="margin-bottom: 14px;">
+        <label>Or Insert Photo in Cell</label>
+        <button class="btn btn-sm btn-primary btn-full" id="btnFreeCellInsertPhoto">
+          Insert Photo from Camera / File
+        </button>
+      </div>
+      <button class="btn btn-primary btn-full" id="btnSaveFreeCell">Save Cell</button>
+    </div>
+  </div>
+
+  <!-- Mandatory Comment Modal when NOT OK is selected -->
+  <div class="modal-overlay" id="mandatoryCommentModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" style="color: var(--danger);">Mandatory Comment (NOT OK)</div>
+        <button class="close-btn" id="btnCloseMandatoryComment">&times;</button>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Selecting NOT OK requires an explanation comment describing the defect or anomaly:
+      </p>
+      <div class="form-group">
+        <label>Comment / Anomaly Description</label>
+        <textarea id="mandatoryCommentText" placeholder="Describe the issue, missing parts, or fault..."></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" id="btnConfirmMandatoryComment">Confirm NOT OK</button>
+    </div>
+  </div>
+
+  <!-- Modal Récapitulatif Photos Manquantes avant Export -->
+  <div class="modal-overlay" id="exportRecapModal">
+    <div class="modal-content" style="max-width: 520px; max-height: 82vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #ffb300; display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Photos Manquantes Détectées
+        </div>
+        <button class="close-btn" id="btnCloseExportRecap">&times;</button>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Certaines photos obligatoires n'ont pas encore été capturées dans les link de la visite :
+      </p>
+      <div id="exportRecapBody" style="overflow-y: auto; font-size: 13px; margin-bottom: 16px; padding-right: 4px; max-height: 48vh;">
+        <!-- Rendu dynamique -->
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-outline" style="flex: 1;" id="btnCancelExportRecap">Annuler</button>
+        <button class="btn btn-primary" style="flex: 1;" id="btnConfirmExportRecap">Continuer l'Export</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Progression Export Visite -->
+  <div class="modal-overlay" id="exportProgressModal">
+    <div class="modal-content" style="max-width: 400px; text-align: center; padding: 24px;">
+      <div class="spinner" style="width: 44px; height: 44px; border: 4px solid rgba(0, 102, 255, 0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+      <div id="exportProgressTitle" style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">Exportation de la Visite...</div>
+      <div id="exportProgressDetail" style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">Préparation des classeurs Excel...</div>
+      <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 8px; overflow: hidden; margin-bottom: 8px;">
+        <div id="exportProgressBar" style="background: linear-gradient(90deg, #0066ff, #00e676); width: 0%; height: 100%; transition: width 0.3s ease;"></div>
+      </div>
+      <div id="exportProgressCount" style="font-size: 12px; color: #70d6ff; font-weight: 600;"> Link 0 / 0</div>
+    </div>
+  </div>
+
+  <!-- Modal Résumé Final de l'Export -->
+  <div class="modal-overlay" id="exportResultsModal">
+    <div class="modal-content" style="max-width: 480px; max-height: 82vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div class="modal-title" id="exportResultsTitle">Export de la Visite Terminé</div>
+        <button class="close-btn" id="btnCloseExportResults">&times;</button>
+      </div>
+      <div id="exportResultsBody" style="font-size: 13px; margin-bottom: 16px; overflow-y: auto; max-height: 52vh;">
+        <!-- Résumé dynamique -->
+      </div>
+      <button class="btn btn-primary btn-full" id="btnOkExportResults">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Modal Options d'Export ( Links prêts vs incomplets) -->
+  <div class="modal-overlay" id="exportOptionsModal">
+    <div class="modal-content" style="max-width: 490px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Exporter les Links de la Visite
+        </div>
+        <button class="close-btn" id="btnCloseExportOptions">&times;</button>
+      </div>
+      <div id="exportOptionsBody" style="font-size: 13px; margin-bottom: 16px; overflow-y: auto; max-height: 52vh;">
+        <!-- Rendu dynamique -->
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn btn-success btn-full" id="btnExportOnlyCompletedOption" style="display: none; font-weight: 700;">
+          Exporter seulement les link terminés (<span id="countCompletedExport">0</span>)
+        </button>
+        <button class="btn btn-primary btn-full" id="btnExportAllOption" style="font-weight: 700;">
+          Exporter TOUS les link (<span id="countAllExport">0</span>)
+        </button>
+        <button class="btn btn-outline btn-full" id="btnCancelExportOptions">
+          Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts: Note sample-template.js is preloaded for 100% offline demo template availability -->
+  <script src="libs/exceljs.min.js"></script>
+  <script src="js/sample-template.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/geotag.js"></script>
+  <script src="js/excel-analyzer.js"></script>
+  <script src="js/excel-exporter.js"></script>
+  <script src="js/visit-manager.js"></script>
+  <script src="js/license-ui.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Service Worker notice:', err));
+      });
+    }
+  </script>
+</body>
+</html>
